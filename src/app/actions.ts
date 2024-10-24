@@ -1,7 +1,7 @@
 'use server'
 
-import { Invoices } from './db/schema'
-import { db } from './db'
+import { Invoices } from '@/db/schema'
+import { db } from '@/db'
 import { redirect } from 'next/navigation'
 
 export async function createAction(formData: FormData) {

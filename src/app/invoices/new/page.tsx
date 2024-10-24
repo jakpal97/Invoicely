@@ -9,7 +9,7 @@ import Container from '@/components/container'
 
 import SubmitButton from '@/components/SubmitButton'
 
-import { createAction } from '@/actions'
+import { createAction } from '@/app/actions'
 
 export default function Dashboard() {
 	const [state, setState] = useState('ready')
