@@ -7,12 +7,14 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import Container from '@/components/container'
 
+
 import SubmitButton from '@/components/SubmitButton'
 
 import { createAction } from '@/app/actions'
 
 export default function Dashboard() {
 	const [state, setState] = useState('ready')
+	
 
 	async function handleOnSubmit(event: SyntheticEvent) {
 		if (state === 'pending') {
@@ -20,6 +22,8 @@ export default function Dashboard() {
 			return
 		}
 		setState('pending')
+		console.log('dodano')
+		
 	}
 
 	return (

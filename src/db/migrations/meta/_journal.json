@@ -8,6 +8,20 @@
       "when": 1729596083170,
       "tag": "0000_material_black_crow",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1729848974265,
+      "tag": "0001_rare_angel",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1729849237264,
+      "tag": "0002_closed_taskmaster",
+      "breakpoints": true
     }
   ]
 }

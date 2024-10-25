@@ -5,13 +5,11 @@ import * as SignIn from '@clerk/elements/sign-in'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
-
-
 export default function SignInPage() {
 	return (
-		<div className="grid w-full flex-grow items-center bg-white px-4 sm:justify-center">
+		<div className="grid w-full flex-grow items-center bg-white px-4 sm:justify-center ">
 			<SignIn.Root>
-				<SignIn.Step name="start" className="w-full space-y-6 rounded-2xl px-4 py-10 sm:w-96 sm:px-8">
+				<SignIn.Step name="start" className="w-full space-y-6 rounded-2xl px-4 py-10 sm:w-96 sm:px-8 border-[1px] border-black-300 shadow-lg">
 					<header className="text-center">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -76,7 +74,7 @@ export default function SignInPage() {
 					<p className="text-center text-sm text-neutral-500">
 						Don&apos;t have an account?{' '}
 						<a
-							href="#"
+							href={String(process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL)}
 							className="rounded px-1 py-0.5 text-neutral-700 outline-none hover:bg-neutral-100 focus-visible:bg-neutral-100">
 							Sign up
 						</a>
@@ -145,7 +143,7 @@ export default function SignInPage() {
 					</SignIn.Strategy>
 					<p className="text-center text-sm text-neutral-500">Don&apos;t have an account? </p>
 					<Link
-						href="/sign-up"
+						href="#"
 						className="rounded px-1 py-0.5 text-neutral-700 outline-none hover:bg-neutral-100 focus-visible:bg-neutral-100">
 						Sign up
 					</Link>
