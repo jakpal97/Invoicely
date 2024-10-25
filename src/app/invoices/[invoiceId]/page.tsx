@@ -27,7 +27,8 @@ export default async function InvoicePage({ params }: { params: { invoiceId: str
 
 	if (!userId) return
 
-	const invoiceId = parseInt(params.invoiceId)
+	const { invoiceId: invoiceIdParam } = await params
+	const invoiceId = parseInt(invoiceIdParam)
 
 	if (isNaN(invoiceId)) {
 		throw new Error('Invalid ID')
