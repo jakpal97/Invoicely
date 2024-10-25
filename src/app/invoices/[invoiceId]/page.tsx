@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { eq, and } from 'drizzle-orm'
 import { db } from '@/db'
-import { Invoices } from '@/db/schema'
+import { Invoices, Customers } from '@/db/schema'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { auth } from '@clerk/nextjs/server'
@@ -36,12 +36,18 @@ export default async function InvoicePage({ params }: { params: { invoiceId: str
 
 	const [result] = await db
 		.select()
-		.from(Invoices)
+		.from(Invoices).innerJoin(Customers, eq(Invoices.customerId, Customers.id))
 		.where(and(eq(Invoices.id, invoiceId), eq(Invoices.userId, userId)))
 		.limit(1)
 
+		console.log('result', result)
+
 	if (!result) {
 		notFound()
+	}
+	const invoice = {
+		...result.invoices,
+		customer: result.customers
 	}
 
 	return (
@@ -53,11 +59,11 @@ export default async function InvoicePage({ params }: { params: { invoiceId: str
 						<Badge
 							className={cn(
 								'rounded-full capitalize',
-								result.status === 'open' && 'bg-blue-500',
-								result.status === 'paid' && 'bg-green-600',
-								result.status === 'void' && 'bg-zinc-700'
+								invoice.status === 'open' && 'bg-blue-500',
+								invoice.status === 'paid' && 'bg-green-600',
+								invoice.status === 'void' && 'bg-zinc-700'
 							)}>
-							{result.status}
+							{invoice.status}
 						</Badge>
 					</h1>
 					<div className="flex gap-4">
@@ -122,9 +128,9 @@ export default async function InvoicePage({ params }: { params: { invoiceId: str
 						</Dialog>
 					</div>
 				</div>
-				<p className="text-3xl mb-3">{(result.value / 100).toFixed(2)}PLN</p>
+				<p className="text-3xl mb-3">{(invoice.value / 100).toFixed(2)}PLN</p>
 
-				<p className="text-lg mb-8">{result.description}</p>
+				<p className="text-lg mb-8">{invoice.description}</p>
 
 				<h2 className="font-bold text-lg mb-4">Billing Details</h2>
 
@@ -135,15 +141,15 @@ export default async function InvoicePage({ params }: { params: { invoiceId: str
 					</li>
 					<li className="flex gap-4">
 						<strong className="block w-28 flex-shrink-0 font-medium text-sm">Invoice Date</strong>
-						<span>{new Date(result.createTs).toLocaleDateString()}</span>
+						<span>{new Date(invoice.createTs).toLocaleDateString()}</span>
 					</li>
 					<li className="flex gap-4">
 						<strong className="block w-28 flex-shrink-0 font-medium text-sm">Billing Name</strong>
-						<span></span>
+						<span>{invoice.customer.name}</span>
 					</li>
 					<li className="flex gap-4">
 						<strong className="block w-28 flex-shrink-0 font-medium text-sm">Billing Email</strong>
-						<span></span>
+						<span>{invoice.customer.email}</span>
 					</li>
 				</ul>
 			</Container>

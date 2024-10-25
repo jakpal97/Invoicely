@@ -1,6 +1,6 @@
 'use server'
 
-import { Invoices, Status } from '@/db/schema'
+import { Invoices,Customers, Status } from '@/db/schema'
 import { db } from '@/db'
 import { redirect } from 'next/navigation'
 import { auth } from '@clerk/nextjs/server'
@@ -9,13 +9,27 @@ import { revalidatePath } from 'next/cache'
 
 export async function createAction(formData: FormData) {
 	const { userId } = await auth()
-	const value = Math.floor(parseFloat(String(formData.get('value')))) * 100
-	const description = formData.get('description') as string
 
 	if (!userId) {
 		console.log('no user')
 		return
 	}
+
+	const value = Math.floor(parseFloat(String(formData.get('value')))) * 100
+	const description = formData.get('description') as string
+	const name = formData.get('name') as string
+	const email = formData.get('email') as string
+
+	const [customer] = await db
+		.insert(Customers)
+		.values({
+			name,
+			email,
+			userId,
+		})
+		.returning({
+			id: Customers.id,
+		})
 
 	const results = await db
 		.insert(Invoices)
@@ -23,6 +37,7 @@ export async function createAction(formData: FormData) {
 			value,
 			description,
 			userId,
+			customerId: customer.id,
 			status: 'open',
 		})
 		.returning({
@@ -54,11 +69,6 @@ export async function deleteInvoiceAction(formData: FormData) {
 
 	const id = formData.get('id') as string
 
-
-	const results = await db
-		.delete(Invoices)
-		.where(and(eq(Invoices.id, parseInt(id)), eq(Invoices.userId, userId)))
+	const results = await db.delete(Invoices).where(and(eq(Invoices.id, parseInt(id)), eq(Invoices.userId, userId)))
 	redirect('/dashboard')
-	
 }
-
