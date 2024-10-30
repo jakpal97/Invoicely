@@ -9,25 +9,35 @@ import { auth } from '@clerk/nextjs/server'
 
 import { Button } from '@/components/ui/button'
 import Container from '@/components/container'
-import { eq } from 'drizzle-orm'
+import { eq, and, isNull } from 'drizzle-orm'
 
 export default async function Dashboard() {
-	const { userId } = await auth()
+	const { userId, orgId } = await auth()
 
 	if (!userId) return
 
-	const results = await db
-		.select()
-		.from(Invoices)
-		.innerJoin(Customers, eq(Invoices.customerId, Customers.id))
-		.where(eq(Invoices.userId, userId))
+	let results
 
-		const invoices = results?.map(({ invoices, customers }) =>{
-			return {
-				...invoices,
-				customer: customers
-			}
-		})
+	if (orgId) {
+		results = await db
+			.select()
+			.from(Invoices)
+			.innerJoin(Customers, eq(Invoices.customerId, Customers.id))
+			.where(eq(Invoices.organizationId, orgId))
+	} else {
+		results = await db
+			.select()
+			.from(Invoices)
+			.innerJoin(Customers, eq(Invoices.customerId, Customers.id))
+			.where(and(eq(Invoices.userId, userId), isNull(Invoices.organizationId)))
+	}
+
+	const invoices = results?.map(({ invoices, customers }) => {
+		return {
+			...invoices,
+			customer: customers,
+		}
+	})
 
 	return (
 		<main className="h-full">

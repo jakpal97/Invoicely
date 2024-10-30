@@ -29,6 +29,13 @@
       "when": 1729870115399,
       "tag": "0003_flippant_ogun",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1730286409202,
+      "tag": "0004_minor_northstar",
+      "breakpoints": true
     }
   ]
 }

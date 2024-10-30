@@ -1,14 +1,17 @@
 'use server'
 
-import { Invoices,Customers, Status } from '@/db/schema'
+import { Invoices, Customers, Status } from '@/db/schema'
 import { db } from '@/db'
 import { redirect } from 'next/navigation'
 import { auth } from '@clerk/nextjs/server'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, isNull } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
+import Stripe from 'stripe'
+
+const sripe = new Stripe(process.env.STRIPE_API_KEY_SECRET as string)
 
 export async function createAction(formData: FormData) {
-	const { userId } = await auth()
+	const { userId, orgId } = await auth()
 
 	if (!userId) {
 		console.log('no user')
@@ -26,6 +29,7 @@ export async function createAction(formData: FormData) {
 			name,
 			email,
 			userId,
+			organizationId: orgId || null,
 		})
 		.returning({
 			id: Customers.id,
@@ -39,6 +43,7 @@ export async function createAction(formData: FormData) {
 			userId,
 			customerId: customer.id,
 			status: 'open',
+			organizationId: orgId || null,
 		})
 		.returning({
 			id: Invoices.id,
@@ -47,19 +52,25 @@ export async function createAction(formData: FormData) {
 }
 
 export async function updateStatusAction(formData: FormData) {
-	const { userId } = await auth()
+	const { userId, orgId } = await auth()
 
 	if (!userId) return
 
 	const id = formData.get('id') as string
 	const status = formData.get('status') as Status
+	if (orgId) {
+		await db
+			.update(Invoices)
+			.set({ status })
+			.where(and(eq(Invoices.id, parseInt(id)), eq(Invoices.organizationId, orgId)))
+	} else {
+		await db
+			.update(Invoices)
+			.set({ status })
+			.where(and(eq(Invoices.id, parseInt(id)), eq(Invoices.userId, userId), isNull(Invoices.organizationId)))
+	}
 
-	const results = await db
-		.update(Invoices)
-		.set({ status })
-		.where(and(eq(Invoices.id, parseInt(id)), eq(Invoices.userId, userId)))
 	revalidatePath(`/invoices/${id}`, 'page')
-	console.log(results)
 }
 
 export async function deleteInvoiceAction(formData: FormData) {

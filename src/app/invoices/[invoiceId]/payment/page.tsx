@@ -76,67 +76,6 @@ export default async function InvoicePage({ params }: { params: { invoiceId: str
 							{invoice.status}
 						</Badge>
 					</h1>
-					<div className="flex gap-4">
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild className="flex items-center gap-2">
-								<Button variant="outline">
-									Change Status <ChevronDown className="w-4 h-auto" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent>
-								{AVAILABLE_STATUS.map(status => {
-									return (
-										<DropdownMenuItem key={status.id}>
-											<form action={updateStatusAction}>
-												<input type="hidden" name="id" value={invoiceId} />
-												<input type="hidden" name="status" value={status.id} />
-												<button>{status.label}</button>
-											</form>
-										</DropdownMenuItem>
-									)
-								})}
-							</DropdownMenuContent>
-						</DropdownMenu>
-						<Dialog>
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild className="flex items-center gap-2">
-									<Button variant="outline">
-										<span className="sr-only">More Options</span>
-										<Ellipsis className="w-4 h-auto" />
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent>
-									<DropdownMenuItem>
-										<DialogTrigger asChild>
-											<button className="flex items-center gap-2">
-												<Trash className="w-4 h-auto" />
-												Delete Invoice
-											</button>
-										</DialogTrigger>
-									</DropdownMenuItem>
-								</DropdownMenuContent>
-							</DropdownMenu>
-
-							<DialogContent className="bg-white">
-								<DialogHeader>
-									<DialogTitle className="text-2xl">Are you absolutely sure?</DialogTitle>
-									<DialogDescription>
-										This action cannot be undone. This will permanently delete your invoice and remove your data from
-										our server.
-									</DialogDescription>
-									<DialogFooter>
-										<form className="flex justify-center" action={deleteInvoiceAction}>
-											<input type="hidden" name="id" value={invoiceId} />
-											<Button variant="destructive" className="flex items-center gap-2">
-												<Trash className="w-4 h-auto" />
-												Delete Invoice
-											</Button>
-										</form>
-									</DialogFooter>
-								</DialogHeader>
-							</DialogContent>
-						</Dialog>
-					</div>
 				</div>
 				<p className="text-3xl mb-3">{(invoice.value / 100).toFixed(2)}PLN</p>
 
