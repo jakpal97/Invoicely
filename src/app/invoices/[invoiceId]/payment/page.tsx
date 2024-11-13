@@ -1,85 +1,126 @@
 import { notFound } from 'next/navigation'
-import { eq, and, isNull } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { Invoices, Customers } from '@/db/schema'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { auth } from '@clerk/nextjs/server'
+import Stripe from 'stripe'
+
 import Container from '@/components/container'
-import AVAILABLE_STATUS from '@/data/invoices'
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from '@/components/ui/dialog'
-
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { updateStatusAction, deleteInvoiceAction } from '@/app/actions'
-import { ChevronDown, Ellipsis, Trash } from 'lucide-react'
+import { CreditCard, Check } from 'lucide-react'
+import { CreatePayment, updateStatusAction } from '@/app/actions'
 
-export default async function InvoicePage({ params }: { params: { invoiceId: string } }) {
-	const { userId, orgId } = await auth()
-
-	if (!userId) return
-
-	const { invoiceId: invoiceIdParam } = await params
-	const invoiceId = parseInt(invoiceIdParam)
-
-	if (isNaN(invoiceId)) {
-		throw new Error('Invalid ID')
+const stripe = new Stripe(process.env.STRIPE_API_KEY_SECRET as string)
+interface InvoicePageProps {
+	params: { invoiceId: string }
+	searchParams: {
+		status: string
+		session_id: string
 	}
-	let result
-	if (orgId) {
-		;[result] = await db
-			.select()
-			.from(Invoices)
-			.innerJoin(Customers, eq(Invoices.customerId, Customers.id))
-			.where(and(eq(Invoices.id, invoiceId), eq(Invoices.organizationId, orgId)))
-			.limit(1)
-	} else {
-		;[result] = await db
-			.select()
-			.from(Invoices)
-			.innerJoin(Customers, eq(Invoices.customerId, Customers.id))
-			.where(and(eq(Invoices.id, invoiceId), eq(Invoices.userId, userId), isNull(Invoices.organizationId)))
-			.limit(1)
+}
+
+export default async function InvoicePage({ params, searchParams }: InvoicePageProps) {
+	const invoiceId = Number(params.invoiceId)
+	const sessionId = searchParams?.session_id
+	const isSuccess = sessionId && searchParams.status === 'success'
+	const isCanceled = searchParams.status === 'canceled'
+	let isErorr = isSuccess && !sessionId
+
+	if (isSuccess) {
+		const { payment_status } = await stripe.checkout.sessions.retrieve(sessionId)
+		if (payment_status !== 'paid') {
+			isErorr = true
+		} else {
+			const formData = new FormData()
+			formData.append('id', String(invoiceId))
+			formData.append('status', 'paid')
+			await updateStatusAction(formData)
+		}
 	}
 
-	console.log('result', result)
+	const [result] = await db
+		.select({
+			id: Invoices.id,
+			status: Invoices.status,
+			createTs: Invoices.createTs,
+			description: Invoices.description,
+			value: Invoices.value,
+			name: Customers.name,
+		})
+		.from(Invoices)
+		.innerJoin(Customers, eq(Invoices.customerId, Customers.id))
+		.where(eq(Invoices.id, invoiceId))
+		.limit(1)
 
 	if (!result) {
 		notFound()
 	}
+
 	const invoice = {
-		...result.invoices,
-		customer: result.customers,
+		...result,
+		customer: {
+			name: result.name,
+		},
 	}
+
+
 
 	return (
 		<main className="w-full h-full ">
 			<Container>
-				<div className="flex justify-between mb-8">
-					<h1 className=" flex items-center gap-4 text-3xl font-semibold">
-						Invoice {invoiceId}{' '}
-						<Badge
-							className={cn(
-								'rounded-full capitalize',
-								invoice.status === 'open' && 'bg-blue-500',
-								invoice.status === 'paid' && 'bg-green-600',
-								invoice.status === 'void' && 'bg-zinc-700'
-							)}>
-							{invoice.status}
-						</Badge>
-					</h1>
-				</div>
-				<p className="text-3xl mb-3">{(invoice.value / 100).toFixed(2)}PLN</p>
+				{isErorr && (
+					<p className="bg-red-120 text-sm text-red-800 text-center px-3 py-2 rounded-lg mb-6">
+						{' '}
+						Something went wrong !!{' '}
+					</p>
+				)}
+				{isCanceled && (
+					<p className="bg-yellow-120 text-sm text-red-800 text-center px-3 py-2 rounded-lg mb-6">
+						{' '}
+						Payment was canceled please try again !{' '}
+					</p>
+				)}
+				<div className="grid grid-cols-2">
+					<div>
+						<div className="flex justify-between mb-8">
+							<h1 className=" flex items-center gap-4 text-3xl font-semibold">
+								Invoice {invoiceId}{' '}
+								<Badge
+									className={cn(
+										'rounded-full capitalize',
+										invoice.status === 'open' && 'bg-blue-500',
+										invoice.status === 'paid' && 'bg-green-600',
+										invoice.status === 'void' && 'bg-zinc-700'
+									)}>
+									{invoice.status}
+								</Badge>
+							</h1>
+						</div>
+						<p className="text-3xl mb-3">{(invoice.value / 100).toFixed(2)}PLN</p>
 
-				<p className="text-lg mb-8">{invoice.description}</p>
+						<p className="text-lg mb-8">{invoice.description}</p>
+					</div>
+					<div>
+						<h2 className="text-2xl font-bold mb-4">Payment Method</h2>
+						{invoice.status === 'open' && (
+							<form action={CreatePayment}>
+								<input type="hidden" name="id" value={invoice.id} />
+								<Button className="flex gap-2 font-bold bg-purple-700">
+									<CreditCard className="w-5 h-auto" />
+									Make payment
+								</Button>
+							</form>
+						)}
+						{invoice.status === 'paid' && (
+							<p className="flex gap-2 items-center text-xl font-bold">
+								{' '}
+								<Check className="w-8 h-auto- bg-green-600 rounded-full text-white p-1" />
+								Invoice Paid
+							</p>
+						)}
+					</div>
+				</div>
 
 				<h2 className="font-bold text-lg mb-4">Billing Details</h2>
 
@@ -95,10 +136,6 @@ export default async function InvoicePage({ params }: { params: { invoiceId: str
 					<li className="flex gap-4">
 						<strong className="block w-28 flex-shrink-0 font-medium text-sm">Billing Name</strong>
 						<span>{invoice.customer.name}</span>
-					</li>
-					<li className="flex gap-4">
-						<strong className="block w-28 flex-shrink-0 font-medium text-sm">Billing Email</strong>
-						<span>{invoice.customer.email}</span>
 					</li>
 				</ul>
 			</Container>

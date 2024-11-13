@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import { eq, and, isNull } from 'drizzle-orm'
 import { db } from '@/db'
 import { Invoices, Customers } from '@/db/schema'
@@ -20,7 +21,7 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { updateStatusAction, deleteInvoiceAction } from '@/app/actions'
-import { ChevronDown, Ellipsis, Trash } from 'lucide-react'
+import { ChevronDown, CreditCard, Ellipsis, Trash } from 'lucide-react'
 
 export default async function InvoicePage({ params }: { params: { invoiceId: string } }) {
 	const { userId, orgId } = await auth()
@@ -113,6 +114,12 @@ export default async function InvoicePage({ params }: { params: { invoiceId: str
 												Delete Invoice
 											</button>
 										</DialogTrigger>
+									</DropdownMenuItem>
+									<DropdownMenuItem>
+										<Link href={`/invoices/${invoiceId}/payment`} className="flex items-center gap-2">
+											<CreditCard className="w-4 h-auto" />
+											Payment
+										</Link>
 									</DropdownMenuItem>
 								</DropdownMenuContent>
 							</DropdownMenu>
