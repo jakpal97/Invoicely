@@ -51,9 +51,14 @@ export async function createAction(formData: FormData) {
 	redirect(`/invoices/${results[0].id}`)
 }
 
+
 export async function updateStatusAction(formData: FormData) {
 	const { userId, orgId } = await auth()
-	if (!userId) return
+
+
+	if (!userId) {
+		return
+	}
 
 	const id = formData.get('id') as string
 	const status = formData.get('status') as Status
@@ -62,16 +67,42 @@ export async function updateStatusAction(formData: FormData) {
 		await db
 			.update(Invoices)
 			.set({ status })
-			.where(and(eq(Invoices.id, parseInt(id)), eq(Invoices.organizationId, orgId)))
+			.where(and(eq(Invoices.id, Number.parseInt(id)), eq(Invoices.organizationId, orgId)))
 	} else {
 		await db
 			.update(Invoices)
 			.set({ status })
-			.where(and(eq(Invoices.id, parseInt(id)), eq(Invoices.userId, userId), isNull(Invoices.organizationId)))
+			.where(and(eq(Invoices.id, Number.parseInt(id)), eq(Invoices.userId, userId), isNull(Invoices.organizationId)))
 	}
 
-	await revalidatePath(`/invoices/${id}`)
+	// revalidatePath(`/invoices/${id}`, 'page')
 }
+export async function updateStatusInvoice(formData: FormData) {
+	const { userId, orgId } = await auth()
+
+
+	if (!userId) {
+		return
+	}
+
+	const id = formData.get('id') as string
+	const status = formData.get('status') as Status
+
+	if (orgId) {
+		await db
+			.update(Invoices)
+			.set({ status })
+			.where(and(eq(Invoices.id, Number.parseInt(id)), eq(Invoices.organizationId, orgId)))
+	} else {
+		await db
+			.update(Invoices)
+			.set({ status })
+			.where(and(eq(Invoices.id, Number.parseInt(id)), eq(Invoices.userId, userId), isNull(Invoices.organizationId)))
+	}
+
+	revalidatePath(`/invoices/${id}`, 'page')
+}
+
 
 export async function deleteInvoiceAction(formData: FormData) {
 	const { userId } = await auth()

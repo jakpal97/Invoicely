@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { auth } from '@clerk/nextjs/server'
 import Container from '@/components/container'
 import AVAILABLE_STATUS from '@/data/invoices'
+
 import {
 	Dialog,
 	DialogContent,
@@ -20,7 +21,7 @@ import {
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { updateStatusAction, deleteInvoiceAction } from '@/app/actions'
+import { updateStatusInvoice, deleteInvoiceAction } from '@/app/actions'
 import { ChevronDown, CreditCard, Ellipsis, Trash } from 'lucide-react'
 
 export default async function InvoicePage({ params }: { params: { invoiceId: string } }) {
@@ -88,7 +89,7 @@ export default async function InvoicePage({ params }: { params: { invoiceId: str
 								{AVAILABLE_STATUS.map(status => {
 									return (
 										<DropdownMenuItem key={status.id}>
-											<form action={updateStatusAction}>
+											<form action={updateStatusInvoice}>
 												<input type="hidden" name="id" value={invoiceId} />
 												<input type="hidden" name="status" value={status.id} />
 												<button>{status.label}</button>
