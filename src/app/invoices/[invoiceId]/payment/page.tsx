@@ -7,8 +7,6 @@ import { cn } from '@/lib/utils'
 import Stripe from 'stripe'
 import { updateStatusAction } from '@/app/actions'
 
-
-
 import Container from '@/components/container'
 import { Button } from '@/components/ui/button'
 import { CreditCard, Check } from 'lucide-react'
@@ -18,14 +16,20 @@ import { CreatePayment } from '@/app/actions'
 const stripe = new Stripe(String(process.env.STRIPE_API_KEY_SECRET))
 
 interface InvoicePageProps {
-	params: { invoiceId: string }
-	searchParams: {
+	params: Promise<{ invoiceId: string }>
+	searchParams: Promise<{
 		status: string
 		session_id: string
-	}
+	}>
 }
 
-export default async function InvoicePage({ params, searchParams }: InvoicePageProps) {
+export default async function InvoicePage({
+	params,
+	searchParams,
+}: {
+	params: Promise<InvoicePageProps['params']>
+	searchParams: InvoicePageProps['searchParams']
+}) {
 	const { invoiceId } = await params
 	const invoiceIdNumber = Number.parseInt(invoiceId)
 
@@ -50,12 +54,11 @@ export default async function InvoicePage({ params, searchParams }: InvoicePageP
 			formData.append('id', String(invoiceIdNumber))
 			formData.append('status', 'paid')
 			await updateStatusAction(formData)
-			
 		}
 	}
-	
-	
 
+	console.log('searchParams:', searchParams)
+	console.log('status:', status)
 	const [result] = await db
 		.select({
 			id: Invoices.id,

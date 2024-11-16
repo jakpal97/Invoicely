@@ -24,7 +24,7 @@ import { Button } from '@/components/ui/button'
 import { updateStatusInvoice, deleteInvoiceAction } from '@/app/actions'
 import { ChevronDown, CreditCard, Ellipsis, Trash } from 'lucide-react'
 
-export default async function InvoicePage({ params }: { params: { invoiceId: string } }) {
+export default async function InvoicePage({ params }: { params: Promise<{ invoiceId: string }> }) {
 	const { userId, orgId } = await auth()
 
 	if (!userId) return
